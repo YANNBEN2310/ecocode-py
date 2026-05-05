@@ -1,7 +1,10 @@
 import json
+from pathlib import Path
 
 from ecocode import eco_compare, eco_report, profile_callable
 from ecocode.cli import main as cli_main
+from ecocode.profiler import profile_callable as run_profile_callable
+from ecocode.report import render_html_report
 from ecocode.static_analysis import analyze_callable
 
 
@@ -128,3 +131,37 @@ def test_cli_compare_command_supports_json_output(capsys) -> None:
     assert payload["baseline"]["function_name"] == "sum_loop"
     assert payload["candidate"]["function_name"] == "sum_builtin"
     assert "better_function_name" in payload
+
+
+def test_render_html_report_contains_key_sections() -> None:
+    _, result = run_profile_callable(loop_sum, [1, 2, 3], carbon_intensity=55)
+
+    html_report = render_html_report(result)
+    assert "<html" in html_report
+    assert "EcoCode execution report" in html_report
+    assert "Function: loop_sum" in html_report
+
+
+def test_cli_report_command_writes_html_file(tmp_path: Path, capsys) -> None:
+    output_path = tmp_path / "ecocode-report.html"
+
+    exit_code = cli_main(
+        [
+            "report",
+            "ecocode.sample_targets:sum_loop",
+            "--arg",
+            "[1, 2, 3]",
+            "--carbon-intensity",
+            "55",
+            "--format",
+            "html",
+            "--output",
+            str(output_path),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert output_path.exists()
+    assert "Wrote report to" in captured.out
+    assert "EcoCode execution report" in output_path.read_text(encoding="utf-8")

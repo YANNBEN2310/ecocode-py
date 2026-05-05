@@ -116,6 +116,12 @@ Sortie JSON pour la CI ou un traitement automatique :
 ecocode report ecocode.sample_targets:sum_loop --arg "[1, 2, 3]" --carbon-intensity 55 --format json
 ```
 
+Rapport HTML ecrit dans un fichier :
+
+```bash
+ecocode report ecocode.sample_targets:sum_loop --arg "[1, 2, 3]" --carbon-intensity 55 --format html --output reports/ecocode-report.html
+```
+
 Comparaison de deux implementations :
 
 ```bash
@@ -135,6 +141,7 @@ Notes :
 - le module doit etre importable depuis le dossier courant,
 - `--arg` accepte des litteraux Python simples evalues avec `ast.literal_eval`,
 - `--format json` permet d'integrer plus facilement EcoCode dans une CI ou un autre outil,
+- `--format html --output ...` permet de generer un rapport lisible a partager,
 - `python -m ecocode.cli ...` fonctionne aussi une fois le package installe, ou avec `PYTHONPATH=src` pendant un usage local non installe.
 
 ## Comment les developpeurs pourront l'utiliser plus tard

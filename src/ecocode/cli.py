@@ -6,10 +6,12 @@ import argparse
 import ast
 import importlib
 import json
+from pathlib import Path
 from typing import Any
 
 from .compare import eco_compare
-from .report import eco_report
+from .profiler import profile_callable
+from .report import eco_report, render_html_report, render_text_report
 
 
 def _load_callable(target: str):
@@ -29,6 +31,17 @@ def _parse_cli_value(raw_value: str) -> Any:
         return ast.literal_eval(raw_value)
     except (SyntaxError, ValueError):
         return raw_value
+
+
+def _emit_output(content: str, output_path: str | None) -> None:
+    if output_path is None:
+        print(content)
+        return
+
+    target = Path(output_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    print(f"Wrote report to {target}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -51,9 +64,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     report_parser.add_argument(
         "--format",
-        choices=("text", "json"),
+        choices=("text", "json", "html"),
         default="text",
         help="Output format.",
+    )
+    report_parser.add_argument(
+        "--output",
+        default=None,
+        help="Optional file path where the rendered report will be written.",
     )
 
     compare_parser = subparsers.add_parser("compare", help="Compare two callables with the same inputs")
@@ -88,13 +106,14 @@ def main(argv: list[str] | None = None) -> int:
         func = _load_callable(args.target)
         call_args = [_parse_cli_value(value) for value in args.arg]
         if args.format == "json":
-            from .profiler import profile_callable
-
             _, result = profile_callable(func, *call_args, carbon_intensity=args.carbon_intensity)
-            print(json.dumps(result.to_dict(), indent=2))
+            _emit_output(json.dumps(result.to_dict(), indent=2), args.output)
+        elif args.format == "html":
+            _, result = profile_callable(func, *call_args, carbon_intensity=args.carbon_intensity)
+            _emit_output(render_html_report(result), args.output)
         else:
             report = eco_report(func, *call_args, carbon_intensity=args.carbon_intensity)
-            print(report)
+            _emit_output(report, args.output)
         return 0
 
     if args.command == "compare":
