@@ -56,6 +56,27 @@ def _resolve_carbon_intensity(carbon_intensity: float | None) -> float:
     return DEFAULT_GRID_CARBON_INTENSITY
 
 
+def get_runtime_config(carbon_intensity: float | None = None) -> dict[str, Any]:
+    """Return the effective runtime configuration used by EcoCode."""
+
+    env_value = os.getenv(CARBON_INTENSITY_ENV_VAR)
+    if carbon_intensity is not None:
+        carbon_intensity_source = "argument"
+    elif env_value is not None:
+        carbon_intensity_source = "environment"
+    else:
+        carbon_intensity_source = "default"
+
+    return {
+        "carbon_intensity": _resolve_carbon_intensity(carbon_intensity),
+        "carbon_intensity_source": carbon_intensity_source,
+        "carbon_intensity_env_var": CARBON_INTENSITY_ENV_VAR,
+        "carbon_intensity_env_value": env_value,
+        "default_grid_carbon_intensity": DEFAULT_GRID_CARBON_INTENSITY,
+        "codecarbon_available": codecarbon is not None,
+    }
+
+
 def _estimate_energy_kwh(cpu_time_s: float, peak_memory_mb: float) -> float:
     cpu_power_watts = 35.0
     memory_power_watts_per_gb = 0.4

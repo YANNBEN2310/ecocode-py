@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from ecocode import CARBON_INTENSITY_ENV_VAR, eco_compare, eco_report, profile_callable
+from ecocode import CARBON_INTENSITY_ENV_VAR, eco_compare, eco_report, get_runtime_config, profile_callable
 from ecocode.cli import main as cli_main
 from ecocode.profiler import profile_callable as run_profile_callable
 from ecocode.report import render_html_report
@@ -189,3 +189,34 @@ def test_profile_callable_uses_environment_carbon_intensity(monkeypatch) -> None
     _, result = profile_callable(loop_sum, [1, 2, 3])
 
     assert result.carbon_intensity_gco2_per_kwh == 123.0
+
+
+def test_get_runtime_config_reports_environment_source(monkeypatch) -> None:
+    monkeypatch.setenv(CARBON_INTENSITY_ENV_VAR, "123")
+
+    config = get_runtime_config()
+
+    assert config["carbon_intensity"] == 123.0
+    assert config["carbon_intensity_source"] == "environment"
+
+
+def test_cli_config_command_prints_effective_config(capsys, monkeypatch) -> None:
+    monkeypatch.setenv(CARBON_INTENSITY_ENV_VAR, "123")
+
+    exit_code = cli_main(["config"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "EcoCode runtime configuration" in captured.out
+    assert "carbon_intensity: 123.0" in captured.out
+    assert "carbon_intensity_source: environment" in captured.out
+
+
+def test_cli_config_command_supports_json_output(capsys) -> None:
+    exit_code = cli_main(["config", "--carbon-intensity", "77", "--format", "json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert exit_code == 0
+    assert payload["carbon_intensity"] == 77.0
+    assert payload["carbon_intensity_source"] == "argument"

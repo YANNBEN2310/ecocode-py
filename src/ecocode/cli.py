@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .compare import eco_compare
-from .profiler import profile_callable
+from .profiler import get_runtime_config, profile_callable
 from .report import eco_report, render_html_report, render_text_report
 
 
@@ -95,6 +95,20 @@ def build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Output format.",
     )
+
+    config_parser = subparsers.add_parser("config", help="Show the effective EcoCode runtime configuration")
+    config_parser.add_argument(
+        "--carbon-intensity",
+        type=float,
+        default=None,
+        help="Optional override used to preview the effective carbon intensity.",
+    )
+    config_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format.",
+    )
     return parser
 
 
@@ -130,6 +144,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(comparison.to_dict(), indent=2))
         else:
             print(comparison.summary())
+        return 0
+
+    if args.command == "config":
+        config = get_runtime_config(carbon_intensity=args.carbon_intensity)
+        if args.format == "json":
+            print(json.dumps(config, indent=2))
+        else:
+            print("EcoCode runtime configuration")
+            print(f"carbon_intensity: {config['carbon_intensity']}")
+            print(f"carbon_intensity_source: {config['carbon_intensity_source']}")
+            print(f"carbon_intensity_env_var: {config['carbon_intensity_env_var']}")
+            print(f"carbon_intensity_env_value: {config['carbon_intensity_env_value']}")
+            print(f"default_grid_carbon_intensity: {config['default_grid_carbon_intensity']}")
+            print(f"codecarbon_available: {config['codecarbon_available']}")
         return 0
 
     parser.error("Unknown command")

@@ -15,6 +15,7 @@ Le projet n'est plus seulement une idee ou un brouillon. A ce stade, EcoCode con
 - une comparaison de fonctions avec `eco_compare`,
 - des rapports texte, JSON et HTML,
 - une CLI `ecocode` avec les commandes `report` et `compare`,
+- une CLI `ecocode` avec les commandes `report`, `compare` et `config`,
 - une petite base de regles AST pour suggerer des ameliorations,
 - une suite de tests `pytest`,
 - une CI GitHub Actions,
@@ -72,6 +73,7 @@ La commande `ecocode` est installee via `pyproject.toml` et permet aujourd'hui :
 
 - `ecocode report ...`
 - `ecocode compare ...`
+- `ecocode config`
 
 ### 6. Qualite projet
 
@@ -197,6 +199,18 @@ Comparaison JSON :
 
 ```bash
 ecocode compare ecocode.sample_targets:sum_loop ecocode.sample_targets:sum_builtin --arg "[1, 2, 3]" --carbon-intensity 55 --format json
+```
+
+Afficher la configuration effective utilisee par EcoCode :
+
+```bash
+ecocode config
+```
+
+Version JSON :
+
+```bash
+ecocode config --format json
 ```
 
 Format attendu pour les cibles : `module:function`.
