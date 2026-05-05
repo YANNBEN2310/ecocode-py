@@ -4,6 +4,8 @@
 
 EcoCode est un package Python qui mesure une estimation de l'empreinte d'execution d'une fonction, propose quelques suggestions d'eco-conception via analyse statique, compare plusieurs implementations, et genere des rapports reutilisables en texte, JSON et HTML.
 
+Le facteur carbone n'est pas fixe : il est paramétrable soit directement avec `carbon_intensity=...` en Python, soit avec `--carbon-intensity ...` dans la CLI, soit globalement avec la variable d'environnement `ECOCODE_CARBON_INTENSITY`.
+
 ## Etat actuel du projet
 
 Le projet n'est plus seulement une idee ou un brouillon. A ce stade, EcoCode contient deja :
@@ -31,6 +33,12 @@ EcoCode mesure aujourd'hui :
 - une estimation d'emissions CO2e.
 
 Si `codecarbon` est installe, EcoCode peut s'appuyer dessus. Sinon, le package utilise un modele interne de secours base sur le temps CPU, la memoire et une intensite carbone configurable.
+
+Ordre de priorite actuel pour le facteur carbone :
+
+1. valeur passee explicitement a l'API ou a la CLI,
+2. variable d'environnement `ECOCODE_CARBON_INTENSITY`,
+3. valeur de secours interne du package.
 
 ### 2. Suggestions d'optimisation
 
@@ -111,10 +119,15 @@ pip install codecarbon
 Exemple rapide :
 
 ```python
-from ecocode import carbon_profiler, eco_compare, eco_report
+import os
+
+from ecocode import CARBON_INTENSITY_ENV_VAR, carbon_profiler, eco_compare, eco_report
 
 
-@carbon_profiler(carbon_intensity=55)
+carbon_intensity = float(os.getenv(CARBON_INTENSITY_ENV_VAR, "55"))
+
+
+@carbon_profiler(carbon_intensity=carbon_intensity)
 def sum_loop(values):
     total = 0
     for index in range(len(values)):
@@ -129,10 +142,10 @@ def sum_builtin(values):
 data = list(range(50_000))
 sum_loop(data)
 
-comparison = eco_compare(sum_loop, sum_builtin, data, carbon_intensity=55)
+comparison = eco_compare(sum_loop, sum_builtin, data, carbon_intensity=carbon_intensity)
 print(comparison.summary())
 
-print(eco_report(sum_loop, data, carbon_intensity=55))
+print(eco_report(sum_loop, data, carbon_intensity=carbon_intensity))
 ```
 
 API principale exposee par le package :
@@ -148,6 +161,12 @@ Apres installation du package :
 
 ```bash
 pip install -e .
+```
+
+Optionnellement, on peut fixer une valeur par defaut pour toute la session :
+
+```bash
+set ECOCODE_CARBON_INTENSITY=55
 ```
 
 Rapport texte :
@@ -188,6 +207,7 @@ Notes utiles :
 - `--arg` utilise `ast.literal_eval` pour parser des litteraux Python simples,
 - `--format json` est pratique pour la CI,
 - `--format html --output ...` permet de partager un rapport lisible,
+- le facteur carbone peut etre passe en argument, ou defini via `ECOCODE_CARBON_INTENSITY`,
 - `python -m ecocode.cli ...` fonctionne aussi si le package est installe, ou avec `PYTHONPATH=src` en local.
 
 ## Structure du projet

@@ -18,6 +18,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
+CARBON_INTENSITY_ENV_VAR = "ECOCODE_CARBON_INTENSITY"
 DEFAULT_GRID_CARBON_INTENSITY = 475.0
 
 
@@ -49,7 +50,7 @@ class CarbonResult:
 def _resolve_carbon_intensity(carbon_intensity: float | None) -> float:
     if carbon_intensity is not None:
         return carbon_intensity
-    env_value = os.getenv("ECOCODE_CARBON_INTENSITY")
+    env_value = os.getenv(CARBON_INTENSITY_ENV_VAR)
     if env_value:
         return float(env_value)
     return DEFAULT_GRID_CARBON_INTENSITY

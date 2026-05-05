@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
 
-from ecocode import eco_compare, eco_report, profile_callable
+from ecocode import CARBON_INTENSITY_ENV_VAR, eco_compare, eco_report, profile_callable
 from ecocode.cli import main as cli_main
 from ecocode.profiler import profile_callable as run_profile_callable
 from ecocode.report import render_html_report
 from ecocode.static_analysis import analyze_callable
+
+
+TEST_CARBON_INTENSITY = 55.0
 
 
 def loop_sum(values):
@@ -22,7 +25,11 @@ def builtin_sum(values):
 def test_profile_callable_returns_value_and_metrics() -> None:
     values = list(range(1000))
 
-    result_value, result_metrics = profile_callable(loop_sum, values, carbon_intensity=55)
+    result_value, result_metrics = profile_callable(
+        loop_sum,
+        values,
+        carbon_intensity=TEST_CARBON_INTENSITY,
+    )
 
     assert result_value == sum(values)
     assert result_metrics.function_name == "loop_sum"
@@ -38,14 +45,19 @@ def test_static_analysis_flags_range_len_loop() -> None:
 
 
 def test_eco_compare_returns_a_named_winner() -> None:
-    comparison = eco_compare(loop_sum, builtin_sum, list(range(5000)), carbon_intensity=55)
+    comparison = eco_compare(
+        loop_sum,
+        builtin_sum,
+        list(range(5000)),
+        carbon_intensity=TEST_CARBON_INTENSITY,
+    )
 
     assert comparison.better_function_name in {"loop_sum", "builtin_sum"}
     assert isinstance(comparison.summary(), str)
 
 
 def test_eco_report_contains_key_sections() -> None:
-    report = eco_report(loop_sum, list(range(1000)), carbon_intensity=55)
+    report = eco_report(loop_sum, list(range(1000)), carbon_intensity=TEST_CARBON_INTENSITY)
 
     assert "EcoCode execution report" in report
     assert "Function: loop_sum" in report
@@ -60,7 +72,7 @@ def test_cli_report_command_prints_a_report(capsys) -> None:
             "--arg",
             "[1, 2, 3]",
             "--carbon-intensity",
-            "55",
+            str(TEST_CARBON_INTENSITY),
         ]
     )
 
@@ -79,7 +91,7 @@ def test_cli_compare_command_prints_a_summary(capsys) -> None:
             "--arg",
             "[1, 2, 3]",
             "--carbon-intensity",
-            "55",
+            str(TEST_CARBON_INTENSITY),
         ]
     )
 
@@ -97,7 +109,7 @@ def test_cli_report_command_supports_json_output(capsys) -> None:
             "--arg",
             "[1, 2, 3]",
             "--carbon-intensity",
-            "55",
+            str(TEST_CARBON_INTENSITY),
             "--format",
             "json",
         ]
@@ -119,7 +131,7 @@ def test_cli_compare_command_supports_json_output(capsys) -> None:
             "--arg",
             "[1, 2, 3]",
             "--carbon-intensity",
-            "55",
+            str(TEST_CARBON_INTENSITY),
             "--format",
             "json",
         ]
@@ -134,7 +146,11 @@ def test_cli_compare_command_supports_json_output(capsys) -> None:
 
 
 def test_render_html_report_contains_key_sections() -> None:
-    _, result = run_profile_callable(loop_sum, [1, 2, 3], carbon_intensity=55)
+    _, result = run_profile_callable(
+        loop_sum,
+        [1, 2, 3],
+        carbon_intensity=TEST_CARBON_INTENSITY,
+    )
 
     html_report = render_html_report(result)
     assert "<html" in html_report
@@ -152,7 +168,7 @@ def test_cli_report_command_writes_html_file(tmp_path: Path, capsys) -> None:
             "--arg",
             "[1, 2, 3]",
             "--carbon-intensity",
-            "55",
+            str(TEST_CARBON_INTENSITY),
             "--format",
             "html",
             "--output",
@@ -165,3 +181,11 @@ def test_cli_report_command_writes_html_file(tmp_path: Path, capsys) -> None:
     assert output_path.exists()
     assert "Wrote report to" in captured.out
     assert "EcoCode execution report" in output_path.read_text(encoding="utf-8")
+
+
+def test_profile_callable_uses_environment_carbon_intensity(monkeypatch) -> None:
+    monkeypatch.setenv(CARBON_INTENSITY_ENV_VAR, "123")
+
+    _, result = profile_callable(loop_sum, [1, 2, 3])
+
+    assert result.carbon_intensity_gco2_per_kwh == 123.0
