@@ -2,17 +2,93 @@
 
 ![CI](https://github.com/YANNBEN2310/ecocode-py/actions/workflows/ci.yml/badge.svg)
 
-EcoCode est un prototype Python qui estime l'empreinte d'execution d'une fonction et la combine avec quelques suggestions d'eco-conception basees sur l'analyse statique du code.
+EcoCode est un package Python qui mesure une estimation de l'empreinte d'execution d'une fonction, propose quelques suggestions d'eco-conception via analyse statique, compare plusieurs implementations, et genere des rapports reutilisables en texte, JSON et HTML.
 
-## Ce que contient ce prototype
+## Etat actuel du projet
 
-- `carbon_profiler` : un decorateur qui execute une fonction, estime ses emissions et affiche un resume.
-- `profile_callable` : une API bas niveau qui renvoie a la fois le resultat de la fonction et un objet structure avec les mesures.
-- `eco_compare` : un utilitaire pour comparer deux implementations avec les memes entrees.
-- `eco_report` : un generateur de rapport texte, pratique pour des logs CI ou pour une future exportation HTML/JSON.
-- Des regles AST simples qui detectent quelques patterns Python potentiellement couteux en CPU ou en memoire.
+Le projet n'est plus seulement une idee ou un brouillon. A ce stade, EcoCode contient deja :
 
-## Installation locale
+- un decorateur `carbon_profiler`,
+- une API bas niveau `profile_callable`,
+- une comparaison de fonctions avec `eco_compare`,
+- des rapports texte, JSON et HTML,
+- une CLI `ecocode` avec les commandes `report` et `compare`,
+- une petite base de regles AST pour suggerer des ameliorations,
+- une suite de tests `pytest`,
+- une CI GitHub Actions,
+- une licence MIT.
+
+## Fonctionnalites deja implementees
+
+### 1. Mesure d'empreinte a l'execution
+
+EcoCode mesure aujourd'hui :
+
+- le temps d'execution,
+- le temps CPU,
+- le pic memoire,
+- une estimation d'energie,
+- une estimation d'emissions CO2e.
+
+Si `codecarbon` est installe, EcoCode peut s'appuyer dessus. Sinon, le package utilise un modele interne de secours base sur le temps CPU, la memoire et une intensite carbone configurable.
+
+### 2. Suggestions d'optimisation
+
+Le module d'analyse statique detecte deja quelques patterns Python simples :
+
+- `range(len(...))` quand une iteration directe serait suffisante,
+- certaines list comprehensions identitaires inutiles,
+- `sum([...])` quand une expression generatrice evite une liste intermediaire.
+
+Ce n'est pas encore un moteur d'optimisation complet, mais la base existe et fonctionne.
+
+### 3. Comparaison de plusieurs implementations
+
+`eco_compare` permet deja de comparer deux fonctions avec les memes entrees. La CLI expose aussi cette fonctionnalite avec `ecocode compare ...`.
+
+### 4. Rapports exportables
+
+Ce point est deja fait.
+
+EcoCode sait produire :
+
+- un rapport texte lisible,
+- une sortie JSON exploitable en CI,
+- un rapport HTML exportable dans un fichier.
+
+### 5. Integration CLI
+
+Ce point est deja fait.
+
+La commande `ecocode` est installee via `pyproject.toml` et permet aujourd'hui :
+
+- `ecocode report ...`
+- `ecocode compare ...`
+
+### 6. Qualite projet
+
+Ce point est deja en place aussi :
+
+- tests `pytest`,
+- CI GitHub Actions sur `push` et `pull_request`,
+- structure de package propre,
+- licence MIT.
+
+## Ce qui n'est pas encore implemente
+
+Ces parties de l'idee initiale ne sont pas encore developpees :
+
+- plugin linter `green_linter`,
+- cache carbone `carbon_aware_cache`,
+- source externe d'intensite carbone en temps reel,
+- historique de rapports ou persistence,
+- integrations FastAPI, Flask, pytest plugin dedie, VS Code extension,
+- blocage automatique de PR sur seuil carbone,
+- modele d'analyse avance ou suggestions basees sur IA.
+
+## Installation
+
+Installation locale :
 
 ```bash
 pip install -e .
@@ -24,15 +100,15 @@ Installation developpeur :
 pip install -e .[dev]
 ```
 
-Dependance optionnelle pour une mesure plus realiste des emissions :
+Dependance optionnelle pour un suivi d'emissions plus realiste :
 
 ```bash
 pip install codecarbon
 ```
 
-Si `codecarbon` n'est pas installe, EcoCode bascule sur un modele interne d'estimation fonde sur le temps CPU, la memoire et une intensite carbone configurable.
+## API Python
 
-## Demarrage rapide
+Exemple rapide :
 
 ```python
 from ecocode import carbon_profiler, eco_compare, eco_report
@@ -59,160 +135,105 @@ print(comparison.summary())
 print(eco_report(sum_loop, data, carbon_intensity=55))
 ```
 
-## Structure du package
+API principale exposee par le package :
 
-- `src/ecocode/profiler.py` : mesure runtime, modele de resultat, decorateur.
-- `src/ecocode/static_analysis.py` : suggestions basees sur l'AST Python.
-- `src/ecocode/compare.py` : comparaison entre deux fonctions.
-- `src/ecocode/report.py` : mise en forme d'un rapport texte.
-- `src/ecocode/__init__.py` : API publique exportee par le package.
-
-## Exemple complet
-
-Un exemple reutilisable est disponible dans `examples/basic_usage.py`.
-
-Execution :
-
-```bash
-python examples/basic_usage.py
-pytest
-```
-
-## Qualite et CI
-
-Le depot contient une CI GitHub Actions qui execute automatiquement `pytest` sur chaque `push` et `pull request`.
-
-Commande locale equivalente :
-
-```bash
-python -m pytest
-```
-
-Pour contribuer proprement, l'ordre minimal est :
-
-1. installer les dependances de dev,
-2. lancer les tests localement,
-3. pousser la branche et verifier que la CI passe.
+- `carbon_profiler`
+- `profile_callable`
+- `eco_compare`
+- `eco_report`
 
 ## CLI
 
-EcoCode expose aussi une commande terminal `ecocode`.
-
-Apres installation locale du package :
+Apres installation du package :
 
 ```bash
 pip install -e .
 ```
 
-Exemple :
+Rapport texte :
 
 ```bash
 ecocode report ecocode.sample_targets:sum_loop --arg "[1, 2, 3]" --carbon-intensity 55
 ```
 
-Sortie JSON pour la CI ou un traitement automatique :
+Rapport JSON :
 
 ```bash
 ecocode report ecocode.sample_targets:sum_loop --arg "[1, 2, 3]" --carbon-intensity 55 --format json
 ```
 
-Rapport HTML ecrit dans un fichier :
+Rapport HTML dans un fichier :
 
 ```bash
 ecocode report ecocode.sample_targets:sum_loop --arg "[1, 2, 3]" --carbon-intensity 55 --format html --output reports/ecocode-report.html
 ```
 
-Comparaison de deux implementations :
+Comparaison texte :
 
 ```bash
 ecocode compare ecocode.sample_targets:sum_loop ecocode.sample_targets:sum_builtin --arg "[1, 2, 3]" --carbon-intensity 55
 ```
 
-Version JSON :
+Comparaison JSON :
 
 ```bash
 ecocode compare ecocode.sample_targets:sum_loop ecocode.sample_targets:sum_builtin --arg "[1, 2, 3]" --carbon-intensity 55 --format json
 ```
 
-Format attendu pour la cible : `module:function`.
+Format attendu pour les cibles : `module:function`.
 
-Notes :
+Notes utiles :
 
-- le module doit etre importable depuis le dossier courant,
-- `--arg` accepte des litteraux Python simples evalues avec `ast.literal_eval`,
-- `--format json` permet d'integrer plus facilement EcoCode dans une CI ou un autre outil,
-- `--format html --output ...` permet de generer un rapport lisible a partager,
-- `python -m ecocode.cli ...` fonctionne aussi une fois le package installe, ou avec `PYTHONPATH=src` pendant un usage local non installe.
+- le module cible doit etre importable,
+- `--arg` utilise `ast.literal_eval` pour parser des litteraux Python simples,
+- `--format json` est pratique pour la CI,
+- `--format html --output ...` permet de partager un rapport lisible,
+- `python -m ecocode.cli ...` fonctionne aussi si le package est installe, ou avec `PYTHONPATH=src` en local.
 
-## Comment les developpeurs pourront l'utiliser plus tard
+## Structure du projet
 
-### En local pendant le developpement
+- `src/ecocode/profiler.py` : mesures runtime, estimation carbone, decorateur, structure `CarbonResult`
+- `src/ecocode/static_analysis.py` : regles AST et suggestions
+- `src/ecocode/compare.py` : comparaison entre deux implementations
+- `src/ecocode/report.py` : rendu texte et HTML des rapports
+- `src/ecocode/cli.py` : interface en ligne de commande
+- `src/ecocode/sample_targets.py` : petites cibles d'exemple pour la CLI et les tests
+- `tests/test_ecocode.py` : couverture fonctionnelle du prototype
+- `.github/workflows/ci.yml` : CI GitHub Actions
 
-- profiler une fonction critique avant une mise en production,
-- comparer deux implementations avant de choisir la plus sobre,
-- ajouter des rapports EcoCode dans une suite de benchmarks.
+## Exemple local
 
-### En integration continue
+Un exemple plus complet est disponible dans `examples/basic_usage.py`.
 
-- lancer des comparaisons sur les fonctions sensibles,
-- serialiser les resultats en JSON,
-- bloquer une PR si une regression carbone depasse un seuil.
+Execution :
 
-### Dans des outils internes
+```bash
+python examples/basic_usage.py
+python -m pytest
+```
 
-- brancher EcoCode sur un service FastAPI ou Flask,
-- l'integrer a un plugin VS Code,
-- produire des rapports RSE sur des traitements batch ou data.
+## Tests et CI
 
-## Pistes d'evolution pour les developpeurs
+Les tests se lancent localement avec :
 
-### 1. Ameliorer le modele d'emissions
+```bash
+python -m pytest
+```
 
-Remplacer le modele de secours par :
+Le depot contient une CI GitHub Actions qui execute ces tests automatiquement sur chaque `push` et `pull_request`.
 
-- des donnees de puissance CPU specifiques a la machine,
-- des donnees d'intensite carbone regionales via API,
-- des modeles adaptes a NumPy, Pandas, Polars ou aux charges ML.
+## Limites actuelles
 
-### 2. Ajouter plus de regles statiques
+- les chiffres sont des estimations, pas des mesures physiques exactes,
+- l'analyse statique est volontairement simple,
+- les regles actuelles couvrent seulement quelques patterns Python,
+- la comparaison reste limitee a deux callables et a des arguments simples,
+- il n'y a pas encore de persistence, de tableau de bord ou de source carbone externe.
 
-Le visiteur AST est volontairement simple. Il peut etre etendu pour detecter :
+## Roadmap realiste
 
-- des boucles imbriquees sur de gros volumes,
-- des listes temporaires inutiles,
-- des copies repetitives de DataFrame,
-- des concatenations de chaines dans des boucles,
-- des acces I/O bloquants ou repetitifs.
-
-### 3. Ajouter une CLI ou une API machine-readable
-
-Prochaines evolutions naturelles :
-
-- ajouter une CLI `ecocode run script.py`,
-- exporter les rapports en JSON,
-- generer des rapports HTML,
-- stocker un historique des mesures.
-
-### 4. Ajouter des integrations framework
-
-Quelques directions utiles :
-
-- middleware Flask ou FastAPI pour profiler les endpoints,
-- helpers Jupyter pour notebooks,
-- plugin pytest pour comparer des benchmarks,
-- extension VS Code pour suggerer des corrections en direct.
-
-## Limites actuelles du prototype
-
-- Les chiffres sont des estimations, pas des mesures materielles exactes.
-- Les suggestions sont basees sur des regles simples, pas sur un moteur IA.
-- Le rapport est textuel uniquement.
-- Il n'y a pas encore de couche de persistence ni de CLI.
-
-## Roadmap conseillee
-
-1. Ajouter des tests automatises.
-2. Exporter les rapports en JSON et HTML.
-3. Ajouter une CLI.
-4. Brancher une source externe d'intensite carbone.
-5. Etendre les regles AST et les integrations CI.
+1. Ajouter plus de regles AST pertinentes.
+2. Ajouter `--output` sur plus de sous-commandes, notamment `compare`.
+3. Ajouter un export Markdown ou un format machine-readable plus riche.
+4. Connecter une source externe d'intensite carbone.
+5. Ajouter des integrations framework et CI plus poussees.
