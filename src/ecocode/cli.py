@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import ast
 import importlib
+import json
 from typing import Any
 
 from .compare import eco_compare
@@ -48,6 +49,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Carbon intensity in gCO2e/kWh used by the fallback estimator.",
     )
+    report_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format.",
+    )
 
     compare_parser = subparsers.add_parser("compare", help="Compare two callables with the same inputs")
     compare_parser.add_argument("baseline", help="Baseline callable in the form module:function")
@@ -64,6 +71,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Carbon intensity in gCO2e/kWh used by the fallback estimator.",
     )
+    compare_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format.",
+    )
     return parser
 
 
@@ -74,8 +87,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "report":
         func = _load_callable(args.target)
         call_args = [_parse_cli_value(value) for value in args.arg]
-        report = eco_report(func, *call_args, carbon_intensity=args.carbon_intensity)
-        print(report)
+        if args.format == "json":
+            from .profiler import profile_callable
+
+            _, result = profile_callable(func, *call_args, carbon_intensity=args.carbon_intensity)
+            print(json.dumps(result.to_dict(), indent=2))
+        else:
+            report = eco_report(func, *call_args, carbon_intensity=args.carbon_intensity)
+            print(report)
         return 0
 
     if args.command == "compare":
@@ -88,7 +107,10 @@ def main(argv: list[str] | None = None) -> int:
             *call_args,
             carbon_intensity=args.carbon_intensity,
         )
-        print(comparison.summary())
+        if args.format == "json":
+            print(json.dumps(comparison.to_dict(), indent=2))
+        else:
+            print(comparison.summary())
         return 0
 
     parser.error("Unknown command")

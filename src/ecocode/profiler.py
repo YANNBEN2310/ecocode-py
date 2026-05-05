@@ -6,7 +6,7 @@ import functools
 import os
 import time
 import tracemalloc
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Callable, TypeVar
 
 from .static_analysis import Suggestion, analyze_callable
@@ -41,6 +41,9 @@ class CarbonResult:
             f"{self.execution_time_s:.4f}s, {self.peak_memory_mb:.2f} MB peak. "
             f"Suggestions: {suggestions}"
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 def _resolve_carbon_intensity(carbon_intensity: float | None) -> float:

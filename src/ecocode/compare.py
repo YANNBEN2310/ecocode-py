@@ -30,6 +30,15 @@ class ComparisonResult:
             f"({self.baseline.function_name} vs {self.candidate.function_name})."
         )
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "baseline": self.baseline.to_dict(),
+            "candidate": self.candidate.to_dict(),
+            "better_function_name": self.better_function_name,
+            "delta_gco2": self.delta_gco2,
+            "summary": self.summary(),
+        }
+
 
 def eco_compare(
     baseline: Callable[..., Any],

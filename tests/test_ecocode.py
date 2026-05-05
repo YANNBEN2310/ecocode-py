@@ -1,3 +1,5 @@
+import json
+
 from ecocode import eco_compare, eco_report, profile_callable
 from ecocode.cli import main as cli_main
 from ecocode.static_analysis import analyze_callable
@@ -82,3 +84,47 @@ def test_cli_compare_command_prints_a_summary(capsys) -> None:
     assert exit_code == 0
     assert "Best implementation:" in captured.out
     assert "sum_loop vs sum_builtin" in captured.out
+
+
+def test_cli_report_command_supports_json_output(capsys) -> None:
+    exit_code = cli_main(
+        [
+            "report",
+            "ecocode.sample_targets:sum_loop",
+            "--arg",
+            "[1, 2, 3]",
+            "--carbon-intensity",
+            "55",
+            "--format",
+            "json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert exit_code == 0
+    assert payload["function_name"] == "sum_loop"
+    assert payload["suggestions"][0]["rule_id"] == "loop-range-len"
+
+
+def test_cli_compare_command_supports_json_output(capsys) -> None:
+    exit_code = cli_main(
+        [
+            "compare",
+            "ecocode.sample_targets:sum_loop",
+            "ecocode.sample_targets:sum_builtin",
+            "--arg",
+            "[1, 2, 3]",
+            "--carbon-intensity",
+            "55",
+            "--format",
+            "json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert exit_code == 0
+    assert payload["baseline"]["function_name"] == "sum_loop"
+    assert payload["candidate"]["function_name"] == "sum_builtin"
+    assert "better_function_name" in payload
