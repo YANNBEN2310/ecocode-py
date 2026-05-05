@@ -1,38 +1,27 @@
 # Experment
 
-Ce dossier contient une vraie mini-application Python construite au-dessus d'EcoCode.
+Ce dossier contient maintenant plusieurs mini-applications Python construites au-dessus d'EcoCode.
 
-## Fichier principal
+## Applications disponibles
 
-- `app.py` : charge un petit jeu de donnees, profile deux implementations, compare leurs emissions estimees, genere des rapports texte et HTML, puis appelle aussi la CLI EcoCode.
+- `app1/` : application de traitement de commandes clients, issue de la premiere demo EcoCode.
+- `app2/` : application de profilage d'analyse textuelle et de comptage de mots, construite comme seconde demo.
 
-## Fonctionnalites EcoCode utilisees
-
-- `carbon_profiler`
-- `profile_callable`
-- `eco_compare`
-- `eco_report`
-- `get_runtime_config`
-- `render_html_report`
-- CLI `ecocode config`
-- CLI `ecocode report`
-- CLI `ecocode compare`
-
-## Lancer l'application
+## Lancer les applications
 
 Depuis la racine du projet :
 
 ```bash
-python experment/app.py
+python experment/app1/app.py
+python experment/app2/app.py
 ```
 
-## Sorties generees
+## Organisation
 
-Lors de l'execution, l'application ecrit des artefacts dans `experment/output/` :
+Chaque application contient ses propres fichiers :
 
-- un rapport texte,
-- un rapport HTML,
-- un JSON de comparaison,
-- un rapport HTML genere via la CLI.
+- `app.py`
+- `README.md`
+- `output/` pour les artefacts generes
 
-Le dossier de sortie est ignore par Git.
+Les dossiers `output/` sont ignores par Git.

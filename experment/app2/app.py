@@ -1,9 +1,10 @@
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 try:
     from ecocode import (
@@ -31,60 +32,55 @@ except ModuleNotFoundError:
     from ecocode.report import render_html_report
 
 
-APP_CARBON_INTENSITY = float(os.getenv(CARBON_INTENSITY_ENV_VAR, "95"))
-OUTPUT_DIR = PROJECT_ROOT / "experment" / "output"
+APP_CARBON_INTENSITY = float(os.getenv(CARBON_INTENSITY_ENV_VAR, "110"))
+OUTPUT_DIR = PROJECT_ROOT / "experment" / "app2" / "output"
 
 
-def load_orders() -> list[dict[str, object]]:
+def load_documents() -> list[str]:
     return [
-        {"customer": "Alice", "items": [12.5, 4.0, 8.0], "country": "FR"},
-        {"customer": "Bob", "items": [3.0, 9.5], "country": "FR"},
-        {"customer": "Alice", "items": [6.5], "country": "FR"},
-        {"customer": "Chloe", "items": [22.0, 5.5, 3.5], "country": "BE"},
+        "EcoCode helps developers reason about code efficiency and carbon-aware tradeoffs.",
+        "This second experiment counts words and highlights repeated text patterns.",
+        "Static analysis and runtime profiling complement each other in this demo.",
     ]
 
 
 @carbon_profiler(carbon_intensity=APP_CARBON_INTENSITY)
-def summarize_orders_loop(orders: list[dict[str, object]]) -> dict[str, float]:
-    totals: dict[str, float] = {}
-    for index in range(len(orders)):
-        order = orders[index]
-        customer = str(order["customer"])
-        items = order["items"]
-        order_total = 0.0
-        for item_index in range(len(items)):
-            order_total += float(items[item_index])
-        totals[customer] = totals.get(customer, 0.0) + order_total
-    return totals
+def count_words_loop(documents: list[str]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for doc_index in range(len(documents)):
+        tokens = re.findall(r"[a-zA-Z]+", documents[doc_index].lower())
+        for token_index in range(len(tokens)):
+            token = tokens[token_index]
+            counts[token] = counts.get(token, 0) + 1
+    return counts
 
 
-def summarize_orders_builtin(orders: list[dict[str, object]]) -> dict[str, float]:
-    totals: dict[str, float] = {}
-    for order in orders:
-        customer = str(order["customer"])
-        order_total = sum(float(item) for item in order["items"])
-        totals[customer] = totals.get(customer, 0.0) + order_total
-    return totals
+def count_words_pythonic(documents: list[str]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for document in documents:
+        for token in re.findall(r"[a-zA-Z]+", document.lower()):
+            counts[token] = counts.get(token, 0) + 1
+    return counts
 
 
-def export_reports(orders: list[dict[str, object]]) -> None:
+def export_reports(documents: list[str]) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     _, profiled_result = profile_callable(
-        summarize_orders_loop,
-        orders,
+        count_words_loop,
+        documents,
         carbon_intensity=APP_CARBON_INTENSITY,
     )
     text_report = eco_report(
-        summarize_orders_loop,
-        orders,
+        count_words_loop,
+        documents,
         carbon_intensity=APP_CARBON_INTENSITY,
     )
     html_report = render_html_report(profiled_result)
     comparison = eco_compare(
-        summarize_orders_loop,
-        summarize_orders_builtin,
-        orders,
+        count_words_loop,
+        count_words_pythonic,
+        documents,
         carbon_intensity=APP_CARBON_INTENSITY,
     )
 
@@ -100,6 +96,7 @@ def run_cli_exports() -> None:
     if str(PROJECT_ROOT) not in sys.path:
         sys.path.insert(0, str(PROJECT_ROOT))
 
+    documents_literal = repr(load_documents())
     ecocode_cli([
         "config",
         "--carbon-intensity",
@@ -109,9 +106,9 @@ def run_cli_exports() -> None:
     ])
     ecocode_cli([
         "report",
-        "experment.app:summarize_orders_loop",
+        "experment.app2.app:count_words_loop",
         "--arg",
-        repr(load_orders()),
+        documents_literal,
         "--carbon-intensity",
         str(APP_CARBON_INTENSITY),
         "--format",
@@ -121,10 +118,10 @@ def run_cli_exports() -> None:
     ])
     ecocode_cli([
         "compare",
-        "experment.app:summarize_orders_loop",
-        "experment.app:summarize_orders_builtin",
+        "experment.app2.app:count_words_loop",
+        "experment.app2.app:count_words_pythonic",
         "--arg",
-        repr(load_orders()),
+        documents_literal,
         "--carbon-intensity",
         str(APP_CARBON_INTENSITY),
         "--format",
@@ -133,33 +130,33 @@ def run_cli_exports() -> None:
 
 
 def main() -> None:
-    orders = load_orders()
+    documents = load_documents()
 
-    print("== EcoCode experiment app ==")
+    print("== EcoCode experiment app 2 ==")
     print(json.dumps(get_runtime_config(APP_CARBON_INTENSITY), indent=2))
     print()
 
-    loop_summary = summarize_orders_loop(orders)
-    builtin_summary, builtin_metrics = profile_callable(
-        summarize_orders_builtin,
-        orders,
+    loop_counts = count_words_loop(documents)
+    pythonic_counts, pythonic_metrics = profile_callable(
+        count_words_pythonic,
+        documents,
         carbon_intensity=APP_CARBON_INTENSITY,
     )
 
-    print("Loop summary:")
-    print(json.dumps(loop_summary, indent=2))
+    print("Loop counts:")
+    print(json.dumps(loop_counts, indent=2, sort_keys=True))
     print()
-    print("Builtin summary:")
-    print(json.dumps(builtin_summary, indent=2))
+    print("Pythonic counts:")
+    print(json.dumps(pythonic_counts, indent=2, sort_keys=True))
     print()
-    print("Profiled builtin implementation:")
-    print(builtin_metrics.summary())
+    print("Profiled pythonic implementation:")
+    print(pythonic_metrics.summary())
     print()
 
     comparison = eco_compare(
-        summarize_orders_loop,
-        summarize_orders_builtin,
-        orders,
+        count_words_loop,
+        count_words_pythonic,
+        documents,
         carbon_intensity=APP_CARBON_INTENSITY,
     )
     print("Comparison:")
@@ -167,10 +164,10 @@ def main() -> None:
     print()
 
     print("Text report from API:")
-    print(eco_report(summarize_orders_loop, orders, carbon_intensity=APP_CARBON_INTENSITY))
+    print(eco_report(count_words_loop, documents, carbon_intensity=APP_CARBON_INTENSITY))
     print()
 
-    export_reports(orders)
+    export_reports(documents)
     run_cli_exports()
 
     print()
