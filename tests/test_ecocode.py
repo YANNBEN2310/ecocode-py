@@ -1,4 +1,5 @@
 from ecocode import eco_compare, eco_report, profile_callable
+from ecocode.cli import main as cli_main
 from ecocode.static_analysis import analyze_callable
 
 
@@ -44,3 +45,21 @@ def test_eco_report_contains_key_sections() -> None:
     assert "EcoCode execution report" in report
     assert "Function: loop_sum" in report
     assert "Suggestions:" in report
+
+
+def test_cli_report_command_prints_a_report(capsys) -> None:
+    exit_code = cli_main(
+        [
+            "report",
+            "ecocode.sample_targets:sum_loop",
+            "--arg",
+            "[1, 2, 3]",
+            "--carbon-intensity",
+            "55",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "EcoCode execution report" in captured.out
+    assert "Function: sum_loop" in captured.out

@@ -94,6 +94,30 @@ Pour contribuer proprement, l'ordre minimal est :
 2. lancer les tests localement,
 3. pousser la branche et verifier que la CI passe.
 
+## CLI
+
+EcoCode expose aussi une commande terminal `ecocode`.
+
+Apres installation locale du package :
+
+```bash
+pip install -e .
+```
+
+Exemple :
+
+```bash
+ecocode report ecocode.sample_targets:sum_loop --arg "[1, 2, 3]" --carbon-intensity 55
+```
+
+Format attendu pour la cible : `module:function`.
+
+Notes :
+
+- le module doit etre importable depuis le dossier courant,
+- `--arg` accepte des litteraux Python simples evalues avec `ast.literal_eval`,
+- `python -m ecocode.cli ...` fonctionne aussi une fois le package installe, ou avec `PYTHONPATH=src` pendant un usage local non installe.
+
 ## Comment les developpeurs pourront l'utiliser plus tard
 
 ### En local pendant le developpement
