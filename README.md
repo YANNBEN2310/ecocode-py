@@ -1,5 +1,7 @@
 # EcoCode
 
+![CI](https://github.com/YANNBEN2310/ecocode-py/actions/workflows/ci.yml/badge.svg)
+
 EcoCode est un prototype Python qui estime l'empreinte d'execution d'une fonction et la combine avec quelques suggestions d'eco-conception basees sur l'analyse statique du code.
 
 ## Ce que contient ce prototype
@@ -14,6 +16,12 @@ EcoCode est un prototype Python qui estime l'empreinte d'execution d'une fonctio
 
 ```bash
 pip install -e .
+```
+
+Installation developpeur :
+
+```bash
+pip install -e .[dev]
 ```
 
 Dependance optionnelle pour une mesure plus realiste des emissions :
@@ -67,7 +75,24 @@ Execution :
 
 ```bash
 python examples/basic_usage.py
+pytest
 ```
+
+## Qualite et CI
+
+Le depot contient une CI GitHub Actions qui execute automatiquement `pytest` sur chaque `push` et `pull request`.
+
+Commande locale equivalente :
+
+```bash
+python -m pytest
+```
+
+Pour contribuer proprement, l'ordre minimal est :
+
+1. installer les dependances de dev,
+2. lancer les tests localement,
+3. pousser la branche et verifier que la CI passe.
 
 ## Comment les developpeurs pourront l'utiliser plus tard
 
