@@ -63,3 +63,22 @@ def test_cli_report_command_prints_a_report(capsys) -> None:
     assert exit_code == 0
     assert "EcoCode execution report" in captured.out
     assert "Function: sum_loop" in captured.out
+
+
+def test_cli_compare_command_prints_a_summary(capsys) -> None:
+    exit_code = cli_main(
+        [
+            "compare",
+            "ecocode.sample_targets:sum_loop",
+            "ecocode.sample_targets:sum_builtin",
+            "--arg",
+            "[1, 2, 3]",
+            "--carbon-intensity",
+            "55",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "Best implementation:" in captured.out
+    assert "sum_loop vs sum_builtin" in captured.out

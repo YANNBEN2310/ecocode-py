@@ -110,6 +110,12 @@ Exemple :
 ecocode report ecocode.sample_targets:sum_loop --arg "[1, 2, 3]" --carbon-intensity 55
 ```
 
+Comparaison de deux implementations :
+
+```bash
+ecocode compare ecocode.sample_targets:sum_loop ecocode.sample_targets:sum_builtin --arg "[1, 2, 3]" --carbon-intensity 55
+```
+
 Format attendu pour la cible : `module:function`.
 
 Notes :

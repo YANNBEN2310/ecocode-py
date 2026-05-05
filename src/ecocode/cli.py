@@ -7,6 +7,7 @@ import ast
 import importlib
 from typing import Any
 
+from .compare import eco_compare
 from .report import eco_report
 
 
@@ -47,6 +48,22 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Carbon intensity in gCO2e/kWh used by the fallback estimator.",
     )
+
+    compare_parser = subparsers.add_parser("compare", help="Compare two callables with the same inputs")
+    compare_parser.add_argument("baseline", help="Baseline callable in the form module:function")
+    compare_parser.add_argument("candidate", help="Candidate callable in the form module:function")
+    compare_parser.add_argument(
+        "--arg",
+        action="append",
+        default=[],
+        help="Positional argument passed to both callables. Repeat the flag for multiple args.",
+    )
+    compare_parser.add_argument(
+        "--carbon-intensity",
+        type=float,
+        default=None,
+        help="Carbon intensity in gCO2e/kWh used by the fallback estimator.",
+    )
     return parser
 
 
@@ -59,6 +76,19 @@ def main(argv: list[str] | None = None) -> int:
         call_args = [_parse_cli_value(value) for value in args.arg]
         report = eco_report(func, *call_args, carbon_intensity=args.carbon_intensity)
         print(report)
+        return 0
+
+    if args.command == "compare":
+        baseline = _load_callable(args.baseline)
+        candidate = _load_callable(args.candidate)
+        call_args = [_parse_cli_value(value) for value in args.arg]
+        comparison = eco_compare(
+            baseline,
+            candidate,
+            *call_args,
+            carbon_intensity=args.carbon_intensity,
+        )
+        print(comparison.summary())
         return 0
 
     parser.error("Unknown command")
